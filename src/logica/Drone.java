@@ -1,4 +1,6 @@
-public class Drone extends Robo  {
+package logica;
+
+public class Drone extends Robo {
 
 	private double altitudeMax;
 

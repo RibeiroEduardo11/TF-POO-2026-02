@@ -1,4 +1,6 @@
-public class RoboTerrestre extends Robo  {
+package logica;
+
+public class RoboTerrestre extends Robo {
 
 	private double capacidadeCarga;
 

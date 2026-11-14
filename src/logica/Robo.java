@@ -1,13 +1,12 @@
-public abstract class Robo  implements Comunicavel {
+package logica;
+package enums;
+
+public abstract class Robo implements Comunicavel {
 
 	private String id;
-
 	private String nome;
-
 	private int nivelBateria;
-
-	private boolean status;
-
+	private StatusRobo status;
 	private int missoesRealizadas;
 
 	public void verificarDisponibilidade() {

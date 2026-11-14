@@ -1,8 +1,14 @@
+package controle;
+
+import logica.AreaOperacao;
+import logica.Missao;
+import logica.Robo;
+
 public class CentralResgate {
 
 	private String nome;
 
-	private ArrayList<Robo > robos;
+	private ArrayList<Robo> robos;
 
 	private ArrayList<AreaOperacao> areas;
 
