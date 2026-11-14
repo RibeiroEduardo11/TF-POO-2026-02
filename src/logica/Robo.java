@@ -1,5 +1,7 @@
 package logica;
-package enums;
+
+import enums.StatusRobo;
+import interfaces.Comunicavel;
 
 public abstract class Robo implements Comunicavel {
 
@@ -9,26 +11,57 @@ public abstract class Robo implements Comunicavel {
 	private StatusRobo status;
 	private int missoesRealizadas;
 
-	public void verificarDisponibilidade() {
+	public Robo(String id, String nome, int nivelBateria){
+		this.id = id;
+		this.nome = nome;
+		setBateria(nivelBateria);
 
+		if(nivelBateria == 0){
+			this.status = StatusRobo.SEM_BATERIA;
+		}else{
+			this.status = StatusRobo.DISPONIVEL;
+		}
+		this.missoesRealizadas = 0;
 	}
 
-	public void consultarBateria() {
+	public void setBateria(int bat){
+		if(bat < 0 || bat >100){
+			throw new IllegalArgumentException("Valor Inválido");
+		}else {
+			this.nivelBateria = bat;
+		}
+		if(bat == 0){
+			status = StatusRobo.SEM_BATERIA;
+		}
+	}
 
+
+	public boolean verificarDisponibilidade() {
+		if(status == StatusRobo.DISPONIVEL){
+			return true;
+		}
+		return false;
+	}
+
+	public int consultarBateria() {
+		return nivelBateria;
 	}
 
 	public void recarregar() {
-
+		if(status == StatusRobo.EM_MISSAO){
+			throw new IllegalStateException("Operação não permitida");
+		}
+		setBateria(100);
+		if(status == StatusRobo.SEM_BATERIA){
+			status = StatusRobo.DISPONIVEL;
+		}
 	}
 
 	public void exibirResumo() {
-
+		System.out.println(toString());
 	}
 
-	public void executarMissao() {
-
-	}
-
+	public abstract void executarMissao();
 
 	/**
 	 * @see Comunicavel#enviarMensagem(String)
@@ -45,4 +78,11 @@ public abstract class Robo implements Comunicavel {
 
 	}
 
+	public String toString(){
+		return "ID: "+ id+ 
+				"\n Nome: "+ nome+
+				"\n Nível Bateria: "+nivelBateria+
+				"\n Status: "+ status+
+				"\n missoesRealizadas: "+missoesRealizadas;
+	}
 }
