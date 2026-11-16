@@ -1,25 +1,16 @@
 public class Missao {
 
-	private int id;
+    private int id;
+    private String descricao;
+    private String tipo;
+    private AreaOperacao area;
+    private String prioridade;
+    private String status;
+    private Robo roboResponsavel;
+    private boolean resultado;
 
-	private String descricao;
-
-	private String tipo;
-
-	private String area;
-
-	private String prioridade;
-
-	private String status;
-
-	private String roboResponsavel;
-
-	private boolean resultado;
-
-	private int attribute31;
-
-	public void atribuirRobo() {
-
+	public void atribuirRobo(Robo robo) {
+		this.roboResponsavel = robo;
 	}
 
 	public void iniciar() {
@@ -34,8 +25,15 @@ public class Missao {
 
 	}
 
-	public void exibirResumo() {
-
+	public String exibirResumo() {
+		return nome + 
+			"\nID: " + id +
+        	"\nDescrição: " + descricao +
+        	"\nTipo: " + tipo +
+        	"\nÁrea de Operação: " + AreaOperacao.localizacao +
+			"\nPrioridade: " + prioridade +
+			"\nRobô responsável: " + roboResponsavel +
+        	"\nStatus da missão: " + status;
 	}
 
 }
