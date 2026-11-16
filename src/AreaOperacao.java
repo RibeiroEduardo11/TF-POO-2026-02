@@ -11,7 +11,7 @@ public class AreaOperacao {
 		this.nivelRisco = novoRisco;
 	}
 
-	public void exibirInformacoes() {
+	public String exibirInformacoes() {
 		return nome + 
 			"\nID: " + id +
         	"\nLocalização: " + localizacao +
