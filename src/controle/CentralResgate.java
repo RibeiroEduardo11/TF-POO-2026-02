@@ -9,6 +9,7 @@ import enums.PrioridadeMissao;
 import enums.StatusMissao;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Queue;
 import java.util.LinkedList;
 import java.util.Scanner;
@@ -172,6 +173,45 @@ public CentralResgate(String nome, Scanner sc) {
             System.out.println("Erro ao cadastrar área: " + e.getMessage());
         }
     }
+
+    public  void ordenarFilaPorPrioridade() {
+    ArrayList<Missao> missoesOrdenadas = new ArrayList<>(missoesPendentes);
+
+    missoesOrdenadas.sort(
+            Comparator.comparingInt(Missao::calcularPontuacaoPrioridade)
+                    .reversed()
+                    .thenComparingInt(Missao::getId)
+    );
+
+    missoesPendentes.clear();
+    missoesPendentes.addAll(missoesOrdenadas);
+}
+
+public void exibirCriteriosPrioridade() {
+    System.out.println("\n=== CRITÉRIOS DE PRIORIZAÇÃO ===");
+
+    System.out.println("\n1. PRIORIDADE CADASTRADA");
+    System.out.println("   Alta: 50 pontos");
+    System.out.println("   Média: 30 pontos");
+    System.out.println("   Baixa: 10 pontos");
+
+    System.out.println("\n2. RISCO DA ÁREA");
+    System.out.println("   Alto: 30 pontos");
+    System.out.println("   Médio: 20 pontos");
+    System.out.println("   Baixo: 10 pontos");
+
+    System.out.println("\n3. TIPO DE MISSÃO");
+    System.out.println("   Localização de pessoas: 20 pontos");
+    System.out.println("   Transporte de suprimentos: 15 pontos");
+    System.out.println("   Reconhecimento: 10 pontos");
+
+    System.out.println("\nA pontuação final é a soma dos três critérios.");
+
+    System.out.println("\nEm caso de empate, a missão cadastrada há mais tempo");
+    System.out.println("recebe prioridade.");
+
+    System.out.println("\n=================================");
+}
 
     // ATUALIZAÇÃO DO RISCO DE UMA ÁREA
 
