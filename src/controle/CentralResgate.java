@@ -1,26 +1,40 @@
 package controle;
 
-import enums.TipoTerreno;
-import logica.*;
 import enums.NivelRisco;
-import enums.TipoMissao;
 import enums.PrioridadeMissao;
 import enums.StatusMissao;
+import enums.TipoMissao;
+import enums.TipoTerreno;
+import interfaces.Comunicavel;
+import logica.AreaOperacao;
+import logica.Drone;
+import logica.Missao;
+import logica.Relatorio;
+import logica.Robo;
+import logica.RoboTerrestre;
 
-import java.util.ArrayList;
-import java.util.Queue;
-import java.util.LinkedList;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Queue;
 import java.util.Scanner;
 
 public class CentralResgate {
 
     private final String nome;
-    private ArrayList<Robo> robos;
-    private ArrayList<AreaOperacao> areas;
-    private Queue<Missao> missoesPendentes;
-    private ArrayList<Missao> missoesFinalizadas;
+    private final DadosResgate dados;
+    private final Map<Integer, Robo> robos;
+    private final Map<Integer, AreaOperacao> areas;
+    private final List<Missao> missoes;
+    private final Queue<Missao> missoesPendentes = new ArrayDeque<>();
     private final Scanner sc;
+    private final Path arquivo;
+    private boolean dadosAlterados;
 
     public CentralResgate() {
         this("Central de Resgate");
@@ -31,16 +45,46 @@ public class CentralResgate {
     }
 
     public CentralResgate(String nome, Scanner sc) {
+        this(nome, sc, new DadosResgate(), null);
+    }
+
+    public CentralResgate(String nome, Scanner sc, Path arquivo) throws IOException {
+        this(nome, sc, PersistenciaResgate.carregar(arquivo), arquivo.toAbsolutePath().normalize());
+    }
+
+    private CentralResgate(String nome, Scanner sc, DadosResgate dados, Path arquivo) {
         if (nome == null || nome.isBlank()) {
             throw new IllegalArgumentException("O nome da central não pode ser vazio.");
         }
 
         this.nome = nome;
-        this.robos = new ArrayList<>();
-        this.areas = new ArrayList<>();
-        this.missoesPendentes = new LinkedList<>();
-        this.missoesFinalizadas = new ArrayList<>();
         this.sc = Objects.requireNonNull(sc, "A entrada da central é obrigatória.");
+        this.arquivo = arquivo;
+        this.dados = dados;
+        this.robos = dados.robos;
+        this.areas = dados.areas;
+        this.missoes = dados.missoes;
+        missoes.stream()
+                .filter(missao -> missao.getStatus() == StatusMissao.PENDENTE)
+                .forEach(missoesPendentes::add);
+    }
+
+    public void salvarDadosPendentes() {
+        if (arquivo == null || !dadosAlterados) {
+            return;
+        }
+
+        try {
+            PersistenciaResgate.salvar(arquivo, dados);
+            dadosAlterados = false;
+        } catch (IOException e) {
+            System.out.println("Erro ao salvar os dados. As alterações seguem em memória: " + e.getMessage());
+        }
+    }
+
+    private void registrarAlteracao() {
+        dadosAlterados = true;
+        salvarDadosPendentes();
     }
 
     public String getNome() {
@@ -70,7 +114,7 @@ public class CentralResgate {
                         id, nomeRobo, bateria, altitude, camera
                 );
 
-                robos.add(novoRobo);
+                robos.put(id, novoRobo);
 
             } else {
                 double capacidade = lerDoublePositivo(
@@ -85,9 +129,10 @@ public class CentralResgate {
                         id, nomeRobo, bateria, capacidade, obstaculos
                 );
 
-                robos.add(novoRobo);
+                robos.put(id, novoRobo);
             }
 
+            registrarAlteracao();
             System.out.println("Robô cadastrado com sucesso! ID: " + id);
 
         } catch (IllegalArgumentException e) {
@@ -155,7 +200,8 @@ public class CentralResgate {
                     tipoTerreno, nivelRisco, descricao
             );
 
-            areas.add(novaArea);
+            areas.put(id, novaArea);
+            registrarAlteracao();
 
             System.out.println("Área cadastrada com sucesso! ID: " + id);
 
@@ -205,6 +251,7 @@ public class CentralResgate {
         }
 
         area.atualizarNivelRisco(novoRisco);
+        registrarAlteracao();
 
         System.out.println("Nível de risco atualizado com sucesso.");
     }
@@ -281,14 +328,16 @@ public class CentralResgate {
             pesoCarga = lerDoubleNaoNegativo("Peso da carga (kg): ");
         }
 
-        int id = missoesPendentes.size() + missoesFinalizadas.size() + 1;
+        int id = missoes.size() + 1;
 
         try {
             Missao novaMissao = new Missao(
                     id, descricao, tipo, area, prioridade, pesoCarga
             );
 
+            missoes.add(novaMissao);
             missoesPendentes.add(novaMissao);
+            registrarAlteracao();
 
             System.out.println("Missão registrada com sucesso! ID: " + id);
 
@@ -307,7 +356,7 @@ public class CentralResgate {
 
         System.out.println("\n=== ROBÔS CADASTRADOS ===");
 
-        for (Robo robo : robos) {
+        for (Robo robo : robos.values()) {
             robo.exibirResumo();
         }
     }
@@ -317,7 +366,7 @@ public class CentralResgate {
 
         System.out.println("\n=== ROBÔS DISPONÍVEIS ===");
 
-        for (Robo robo : robos) {
+        for (Robo robo : robos.values()) {
             if (robo.verificarDisponibilidade()) {
                 robo.exibirResumo();
                 encontrou = true;
@@ -346,6 +395,7 @@ public class CentralResgate {
 
         try {
             robo.recarregar();
+            registrarAlteracao();
             System.out.println("Robô recarregado com sucesso.");
         } catch (IllegalStateException e) {
             System.out.println("Não foi possível recarregar o robô: " + e.getMessage());
@@ -356,7 +406,7 @@ public class CentralResgate {
 
     public void atribuirRoboMissao() {
         if (missoesPendentes.isEmpty()) {
-            System.out.println("Não existem missões em aberto.");
+            System.out.println("Não existem missões pendentes.");
             return;
         }
 
@@ -397,137 +447,194 @@ public class CentralResgate {
             return;
         }
 
+        atribuirRobo(missao, robo);
+    }
+
+    private void atribuirRobo(Missao missao, Robo robo) {
         try {
             missao.atribuirRobo(robo);
+            registrarAlteracao();
             System.out.println("Robô atribuído à missão com sucesso.");
 
+            Comunicavel canal = robo;
+            canal.receberMensagem("Central: prepare-se para a missão " + missao.getId() + ".");
         } catch (IllegalStateException | IllegalArgumentException e) {
             System.out.println("Erro ao atribuir robô: " + e.getMessage());
         }
     }
 
-    // INÍCIO DE MISSÃO
+    public void sugerirDespacho() {
+        Comparator<Missao> porUrgencia = Comparator.comparing(Missao::getPrioridade)
+                .thenComparing(missao -> missao.getArea().getNivelRisco())
+                .reversed();
 
-    public void iniciarMissao() {
-        if (missoesPendentes.isEmpty()) {
-            System.out.println("Não existem missões em aberto.");
+        List<Missao> candidatas = missoesPendentes.stream()
+                .filter(missao -> missao.getRoboResponsavel() == null)
+                .sorted(porUrgencia)
+                .toList();
+
+        if (candidatas.isEmpty()) {
+            System.out.println("Não existem missões pendentes sem robô atribuído.");
             return;
         }
 
-        listarMissoesPendentes();
+        for (Missao missao : candidatas) {
+            Optional<Robo> robo = selecionarRobo(missao);
+            if (robo.isPresent()) {
+                exibirSugestao(missao, robo.get());
+                return;
+            }
 
-        int id = lerInteiro("Informe o ID da missão: ", 1, Integer.MAX_VALUE);
+            System.out.println("Missão " + missao.getId()
+                    + " permanece pendente: nenhum robô apto no momento.");
+        }
+    }
 
-        Missao missao = buscarMissaoPendente(id);
+    private Optional<Robo> selecionarRobo(Missao missao) {
+        return robos.values().stream()
+                .filter(Robo::verificarDisponibilidade)
+                .filter(robo -> robo.podeExecutar(missao))
+                .filter(robo -> robo.consultarBateria() >= robo.calcularConsumoBateria(missao))
+                .min(Comparator.comparingInt((Robo robo) ->
+                        robo.consultarBateria() - robo.calcularConsumoBateria(missao))
+                        .thenComparingInt(Robo::getId));
+    }
 
+    private void exibirSugestao(Missao missao, Robo robo) {
+        int consumo = robo.calcularConsumoBateria(missao);
+        System.out.println("\n=== DESPACHO ASSISTIDO ===");
+        System.out.printf("Missão %d - %s | Prioridade: %s | Risco: %s%n",
+                missao.getId(), missao.getDescricao(), missao.getPrioridade(),
+                missao.getArea().getNivelRisco());
+        System.out.printf("Robô %d - %s | Bateria: %d%% | Consumo: %d p.p. | Restante: %d%%%n",
+                robo.getId(), robo.getNome(), robo.consultarBateria(), consumo,
+                robo.consultarBateria() - consumo);
+        System.out.println("Critérios: prioridade, risco e ordem da fila.");
+        System.out.println("Entre os robôs aptos, é usada a menor sobra de bateria.");
+        if (lerSimNao("Confirma a atribuição sugerida?")) {
+            atribuirRobo(missao, robo);
+        } else {
+            System.out.println("Sugestão recusada. A missão permanece pendente.");
+        }
+    }
+
+    // INÍCIO, CONCLUSÃO E CANCELAMENTO
+
+    public void iniciarMissao() {
+        Missao missao = selecionarMissaoEmAberto();
         if (missao == null) {
-            System.out.println("Missão não encontrada.");
             return;
         }
 
         try {
             missao.iniciar();
+            missoesPendentes.remove(missao);
+            registrarAlteracao();
             System.out.println("Missão iniciada com sucesso.");
-
+            Comunicavel canal = missao.getRoboResponsavel();
+            canal.enviarMensagem("Central, iniciei a missão " + missao.getId() + ".");
         } catch (IllegalStateException e) {
             System.out.println("Não foi possível iniciar a missão: " + e.getMessage());
         }
     }
 
-    // CONCLUSÃO DE MISSÃO
-
     public void concluirMissao() {
-        if (missoesPendentes.isEmpty()) {
-            System.out.println("Não existem missões em aberto.");
-            return;
-        }
-
-        listarMissoesPendentes();
-
-        int id = lerInteiro("Informe o ID da missão: ", 1, Integer.MAX_VALUE);
-        Missao missao = buscarMissaoPendente(id);
-
+        Missao missao = selecionarMissaoEmAberto();
         if (missao == null) {
-            System.out.println("Missão não encontrada.");
             return;
         }
 
         try {
             missao.concluir();
-
-            missoesPendentes.remove(missao);
-            missoesFinalizadas.add(missao);
-
+            registrarAlteracao();
             System.out.println("Missão concluída com sucesso.");
             System.out.println("Resultado: " + missao.getResultado());
+            Comunicavel canal = missao.getRoboResponsavel();
+            canal.enviarMensagem(missao.getResultado());
         } catch (IllegalStateException | IllegalArgumentException e) {
             System.out.println("Erro ao concluir missão: " + e.getMessage());
         }
     }
 
-    // CANCELAMENTO DE MISSÃO
-
     public void cancelarMissao() {
-        if (missoesPendentes.isEmpty()) {
-            System.out.println("Não existem missões em aberto.");
-            return;
-        }
-
-        listarMissoesPendentes();
-
-        int id = lerInteiro("Informe o ID da missão: ", 1, Integer.MAX_VALUE);
-
-        Missao missao = buscarMissaoPendente(id);
-
+        Missao missao = selecionarMissaoEmAberto();
         if (missao == null) {
-            System.out.println("Missão não encontrada.");
             return;
         }
 
         try {
             missao.cancelar();
-
             missoesPendentes.remove(missao);
-            missoesFinalizadas.add(missao);
-
+            registrarAlteracao();
             System.out.println(missao.getResultado());
-
+            Comunicavel canal = missao.getRoboResponsavel();
+            if (canal != null) {
+                canal.receberMensagem("Central: missão " + missao.getId() + " cancelada.");
+            }
         } catch (IllegalStateException e) {
             System.out.println("Não foi possível cancelar a missão: " + e.getMessage());
         }
+    }
+
+    private Missao selecionarMissaoEmAberto() {
+        List<Missao> abertas = missoes.stream().filter(missao -> !estaFinalizada(missao)).toList();
+        if (abertas.isEmpty()) {
+            System.out.println("Não existem missões em aberto.");
+            return null;
+        }
+
+        exibirMissoes("MISSÕES EM ABERTO", abertas);
+        int id = lerInteiro("Informe o ID da missão: ", 1, Integer.MAX_VALUE);
+        Missao missao = abertas.stream().filter(item -> item.getId() == id).findFirst().orElse(null);
+        if (missao == null) {
+            System.out.println("Missão em aberto não encontrada.");
+        }
+        return missao;
     }
 
     // LISTAGEM DE MISSÕES
 
     public void listarMissoesPendentes() {
         if (missoesPendentes.isEmpty()) {
-            System.out.println("Não existem missões em aberto.");
+            System.out.println("Não existem missões pendentes.");
             return;
         }
+        exibirMissoes("FILA DE MISSÕES PENDENTES", missoesPendentes);
+    }
 
-        System.out.println("\n=== MISSÕES EM ABERTO ===");
-
-        for (Missao missao : missoesPendentes) {
-            System.out.println(missao.exibirResumo());
-            System.out.println("--------------------------------");
+    public void listarMissoesEmAndamento() {
+        List<Missao> emAndamento = missoes.stream()
+                .filter(missao -> missao.getStatus() == StatusMissao.EM_ANDAMENTO)
+                .toList();
+        if (emAndamento.isEmpty()) {
+            System.out.println("Não existem missões em andamento.");
+            return;
         }
+        exibirMissoes("MISSÕES EM ANDAMENTO", emAndamento);
     }
 
     public void listarMissoesFinalizadas() {
-        if (missoesFinalizadas.isEmpty()) {
+        List<Missao> finalizadas = missoes.stream().filter(this::estaFinalizada).toList();
+        if (finalizadas.isEmpty()) {
             System.out.println("Não existem missões finalizadas.");
             return;
         }
+        exibirMissoes("HISTÓRICO DE MISSÕES", finalizadas);
+    }
 
-        System.out.println("\n=== MISSÕES FINALIZADAS ===");
+    private boolean estaFinalizada(Missao missao) {
+        return missao.getStatus() == StatusMissao.CONCLUIDA
+                || missao.getStatus() == StatusMissao.CANCELADA;
+    }
 
-        for (Missao missao : missoesFinalizadas) {
+    private void exibirMissoes(String titulo, Iterable<Missao> selecao) {
+        System.out.println("\n=== " + titulo + " ===");
+
+        for (Missao missao : selecao) {
             System.out.println(missao.exibirResumo());
             System.out.println("--------------------------------");
         }
     }
-
-    // LISTAGEM DE ÁREAS
 
     public void listarAreas() {
         if (areas.isEmpty()) {
@@ -535,40 +642,14 @@ public class CentralResgate {
             return;
         }
 
-        for (AreaOperacao area : areas) {
+        for (AreaOperacao area : areas.values()) {
             System.out.println(area.exibirInformacoes());
             System.out.println("--------------------------------");
         }
     }
 
-    // GERAÇÃO DE RELATÓRIO
-
     public void gerarRelatorioGeral() {
-        int totalMissoes = missoesPendentes.size()
-                + missoesFinalizadas.size();
-
-        int missoesConcluidas = 0;
-        int missoesAguardandoInicio = 0;
-
-        for (Missao missao : missoesFinalizadas) {
-            if (missao.getStatus() == StatusMissao.CONCLUIDA) {
-                missoesConcluidas++;
-            }
-        }
-
-        for (Missao missao : missoesPendentes) {
-            if (missao.getStatus() == StatusMissao.PENDENTE) {
-                missoesAguardandoInicio++;
-            }
-        }
-
-        Relatorio relatorio = new Relatorio(
-                missoesConcluidas,
-                missoesAguardandoInicio,
-                robos.size(),
-                totalMissoes
-        );
-
+        Relatorio relatorio = new Relatorio(robos.values(), missoes);
         System.out.println(relatorio.gerarResumo());
 
         if (lerSimNao("Deseja salvar o relatório em arquivo?")) {
@@ -576,36 +657,19 @@ public class CentralResgate {
         }
     }
 
-    // MÉTODOS AUXILIARES DE BUSCA
-
     private Robo buscarRoboPorId(int id) {
-        for (Robo robo : robos) {
-            if (robo.getId() == id) {
-                return robo;
-            }
-        }
-
-        return null;
+        return robos.get(id);
     }
 
     private AreaOperacao buscarAreaPorId(int id) {
-        for (AreaOperacao area : areas) {
-            if (area.getId() == id) {
-                return area;
-            }
-        }
-
-        return null;
+        return areas.get(id);
     }
 
     private Missao buscarMissaoPendente(int id) {
-        for (Missao missao : missoesPendentes) {
-            if (missao.getId() == id) {
-                return missao;
-            }
-        }
-
-        return null;
+        return missoesPendentes.stream()
+                .filter(missao -> missao.getId() == id)
+                .findFirst()
+                .orElse(null);
     }
 
     // MÉTODOS AUXILIARES DE ENTRADA

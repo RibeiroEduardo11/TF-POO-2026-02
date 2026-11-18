@@ -4,12 +4,16 @@ import enums.StatusMissao;
 import enums.StatusRobo;
 import interfaces.Comunicavel;
 
-public abstract class Robo implements Comunicavel {
+import java.io.Serializable;
+import java.util.Objects;
 
-	public final int id;
+public abstract class Robo implements Comunicavel, Serializable {
+    private static final long serialVersionUID = 1L;
+
+	private final int id;
 	private String nome;
-	public int nivelBateria;
-	public StatusRobo status;
+	private int nivelBateria;
+	private StatusRobo status;
 	private int missoesRealizadas;
 
 	protected Robo(int id, String nome, int nivelBateria) {
@@ -48,8 +52,8 @@ public abstract class Robo implements Comunicavel {
 		return status;
 	}
 
-	public void setStatus(StatusRobo status) {
-		this.status = status;
+	void setStatus(StatusRobo status) {
+		this.status = Objects.requireNonNull(status, "O status do robô é obrigatório.");
 	}
 
 	public int getMissoesRealizadas() {

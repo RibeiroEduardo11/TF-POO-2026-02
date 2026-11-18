@@ -3,6 +3,8 @@ package logica;
 import enums.TipoMissao;
 
 public class Drone extends Robo {
+    private static final long serialVersionUID = 1L;
+
     private final double altitudeMax;
     private final boolean captarImagem;
 
@@ -44,5 +46,12 @@ public class Drone extends Robo {
                 ? "Área sobrevoada e informações coletadas."
                 : "Busca aérea simulada realizada com câmera.";
         missao.registrarResultado(resultado);
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "\n Tipo: Drone"
+                + "\n Altitude máxima (m): " + altitudeMax
+                + "\n Câmera: " + (captarImagem ? "sim" : "não");
     }
 }

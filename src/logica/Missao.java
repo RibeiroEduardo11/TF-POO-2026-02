@@ -5,17 +5,20 @@ import enums.PrioridadeMissao;
 import enums.StatusMissao;
 import enums.StatusRobo;
 
-public class Missao {
+import java.io.Serializable;
 
-    private int id;
-    private String descricao;
-    private TipoMissao tipo;
-    private AreaOperacao area;
-    private PrioridadeMissao prioridade;
+public class Missao implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private final int id;
+    private final String descricao;
+    private final TipoMissao tipo;
+    private final AreaOperacao area;
+    private final PrioridadeMissao prioridade;
     private StatusMissao status;
     private Robo roboResponsavel;
     private String resultado;
-    private double pesoCargaKg;
+    private final double pesoCargaKg;
 
     public Missao(int id, String descricao, TipoMissao tipo,
                   AreaOperacao area, PrioridadeMissao prioridade,

@@ -1,0 +1,105 @@
+digraph Resgate {
+    graph [bgcolor="white", rankdir=TB, nodesep=0.31, ranksep=0.54, pad=0.13, splines=polyline];
+    node [shape=plain, fontname="DejaVu Sans", fontsize=11];
+    edge [color="#456479", fontname="DejaVu Sans", fontsize=8.5, arrowsize=0.7];
+
+    Main [label=<
+        <TABLE BORDER="1" COLOR="#456479" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BGCOLOR="#f7f9fb"><B>app.Main</B></TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">+ main(args)</TD></TR>
+        </TABLE>>];
+    Central [label=<
+        <TABLE BORDER="1" COLOR="#456479" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BGCOLOR="#ddf3ef"><B>CentralResgate</B></TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">- nome: String<BR ALIGN="LEFT"/>- robos: Map<BR ALIGN="LEFT"/>- areas: Map<BR ALIGN="LEFT"/>- missoes: List<BR ALIGN="LEFT"/>- missoesPendentes: Queue</TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">+ cadastrarRobo() / cadastrarArea()<BR ALIGN="LEFT"/>+ registrarMissao() / atribuirRoboMissao()<BR ALIGN="LEFT"/>+ iniciarMissao() / concluirMissao()<BR ALIGN="LEFT"/>+ sugerirDespacho()<BR ALIGN="LEFT"/>+ gerarRelatorioGeral()</TD></TR>
+        </TABLE>>];
+    Dados [label=<
+        <TABLE BORDER="1" COLOR="#456479" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BGCOLOR="#f7f9fb"><B>DadosResgate</B></TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">~ robos: LinkedHashMap<BR ALIGN="LEFT"/>~ areas: LinkedHashMap<BR ALIGN="LEFT"/>~ missoes: ArrayList</TD></TR>
+        </TABLE>>];
+    Persistencia [label=<
+        <TABLE BORDER="1" COLOR="#456479" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BGCOLOR="#f7f9fb"><B>PersistenciaResgate</B></TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">~ carregar(arquivo): DadosResgate<BR ALIGN="LEFT"/>~ salvar(arquivo, dados)</TD></TR>
+        </TABLE>>];
+    Relatorio [label=<
+        <TABLE BORDER="1" COLOR="#456479" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BGCOLOR="#f3f7fb"><B>Relatorio</B></TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">- dataGeracao: LocalDateTime<BR ALIGN="LEFT"/>- totalRobos / totalMissoes<BR ALIGN="LEFT"/>- missões por estado</TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">+ gerarResumo(): String<BR ALIGN="LEFT"/>+ salvarEmArquivo()</TD></TR>
+        </TABLE>>];
+    Area [label=<
+        <TABLE BORDER="1" COLOR="#456479" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BGCOLOR="#f3f7fb"><B>AreaOperacao</B></TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">- id / nome / localizacao<BR ALIGN="LEFT"/>- tipoTerreno: TipoTerreno<BR ALIGN="LEFT"/>- nivelRisco: NivelRisco<BR ALIGN="LEFT"/>- descricao: String</TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">+ atualizarNivelRisco(novoRisco)<BR ALIGN="LEFT"/>+ exibirInformacoes(): String</TD></TR>
+        </TABLE>>];
+    Missao [label=<
+        <TABLE BORDER="1" COLOR="#456479" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BGCOLOR="#ddf3ef"><B>Missao</B></TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">- id / descricao / pesoCargaKg<BR ALIGN="LEFT"/>- tipo: TipoMissao<BR ALIGN="LEFT"/>- prioridade: PrioridadeMissao<BR ALIGN="LEFT"/>- status: StatusMissao<BR ALIGN="LEFT"/>- resultado: String</TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">+ atribuirRobo(robo)<BR ALIGN="LEFT"/>+ iniciar() / concluir() / cancelar()<BR ALIGN="LEFT"/>+ calculaBateria(): int<BR ALIGN="LEFT"/>+ exibirResumo(): String</TD></TR>
+        </TABLE>>];
+    Robo [label=<
+        <TABLE BORDER="1" COLOR="#456479" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BGCOLOR="#ddf3ef"><B>Robo (abstrata)</B></TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">- id / nome / nivelBateria<BR ALIGN="LEFT"/>- status: StatusRobo<BR ALIGN="LEFT"/>- missoesRealizadas: int</TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">+ verificarDisponibilidade(): boolean<BR ALIGN="LEFT"/>+ consultarBateria(): int / recarregar()<BR ALIGN="LEFT"/>+ executarMissao(missao) {abstract}<BR ALIGN="LEFT"/>+ podeExecutar(missao): boolean</TD></TR>
+        </TABLE>>];
+    Comunicavel [label=<
+        <TABLE BORDER="1" COLOR="#456479" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BGCOLOR="#f7f9fb"><B>«interface» Comunicavel</B></TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">+ enviarMensagem(mensagem)<BR ALIGN="LEFT"/>+ receberMensagem(mensagem)</TD></TR>
+        </TABLE>>];
+    Drone [label=<
+        <TABLE BORDER="1" COLOR="#456479" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BGCOLOR="#f3f7fb"><B>Drone</B></TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">- altitudeMax: double<BR ALIGN="LEFT"/>- captarImagem: boolean</TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">+ podeExecutar(missao): boolean<BR ALIGN="LEFT"/>+ executarMissao(missao)</TD></TR>
+        </TABLE>>];
+    Terrestre [label=<
+        <TABLE BORDER="1" COLOR="#456479" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6">
+            <TR><TD BGCOLOR="#f3f7fb"><B>RoboTerrestre</B></TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">- capacidadeCargaKg: double<BR ALIGN="LEFT"/>- superaObstaculos: boolean</TD></TR>
+            <HR/>
+            <TR><TD ALIGN="LEFT" BALIGN="LEFT">+ podeExecutar(missao): boolean<BR ALIGN="LEFT"/>+ executarMissao(missao)</TD></TR>
+        </TABLE>>];
+
+    {rank=same; Main; Persistencia}
+    {rank=same; Relatorio; Central; Dados}
+    {rank=same; Area; Missao; Robo; Comunicavel}
+    {rank=same; Drone; Terrestre}
+
+    Main -> Central [style=dashed, label="inicia"];
+    Central -> Relatorio [style=dashed, label="gera", constraint=false];
+    Central -> Persistencia [style=dashed, label="usa", constraint=false];
+    Central -> Dados [dir=both, arrowtail=diamond, arrowhead=none, label="1", constraint=false];
+    Persistencia -> Dados [style=dashed, label="lê/grava"];
+    Central -> Missao [arrowhead=none, taillabel="1", headlabel="0..*", label="coordena"];
+    Central -> Area [arrowhead=none, headlabel="0..*", label="cadastra"];
+    Central -> Robo [arrowhead=none, headlabel="0..*", label="cadastra"];
+    Missao -> Area [headlabel="1", label="área", constraint=false];
+    Missao -> Robo [headlabel="0..1", label="responsável", constraint=false];
+    Robo -> Comunicavel [style=dashed, arrowhead=empty, label="implementa", constraint=false];
+    Robo -> Drone [dir=back, arrowtail=empty];
+    Robo -> Terrestre [dir=back, arrowtail=empty];
+}

@@ -5,6 +5,8 @@ import enums.TipoMissao;
 
 /** Robo terrestre: transporte de suprimentos. */
 public class RoboTerrestre extends Robo {
+    private static final long serialVersionUID = 1L;
+
     private final double capacidadeCargaKg;
     private final boolean superaObstaculos;
 
@@ -48,8 +50,10 @@ public class RoboTerrestre extends Robo {
         missao.registrarResultado(resultado);
     }
 
-	@Override 
-	public void exibirResumo() {
-		System.out.println(toString());
-	}
+    @Override
+    public String toString() {
+        return super.toString() + "\n Tipo: Robô terrestre"
+                + "\n Capacidade de carga (kg): " + capacidadeCargaKg
+                + "\n Supera obstáculos: " + (superaObstaculos ? "sim" : "não");
+    }
 }
