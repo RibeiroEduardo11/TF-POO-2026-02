@@ -1,41 +1,191 @@
+package logica;
+
+import enums.TipoMissao;
+import enums.PrioridadeMissao;
+import enums.StatusMissao;
+import enums.StatusRobo;
+
 public class Missao {
 
-	private int id;
+    private int id;
+    private String descricao;
+    private TipoMissao tipo;
+    private AreaOperacao area;
+    private PrioridadeMissao prioridade;
+    private StatusMissao status;
+    private Robo roboResponsavel;
+    private String resultado;
+    private double pesoCargaKg;
 
-	private String descricao;
+    public Missao(int id, String descricao, TipoMissao tipo,
+                  AreaOperacao area, PrioridadeMissao prioridade,
+                  double pesoCargaKg) {
 
-	private String tipo;
+        if (id <= 0) {
+            throw new IllegalArgumentException("O ID deve ser positivo.");
+        }
 
-	private String area;
+        if (descricao == null || descricao.isBlank()) {
+            throw new IllegalArgumentException("A descrição não pode ser vazia.");
+        }
 
-	private String prioridade;
+        if (tipo == null) {
+            throw new IllegalArgumentException("O tipo da missão não pode ser nulo.");
+        }
 
-	private String status;
+        if (area == null) {
+            throw new IllegalArgumentException("A área de operação não pode ser nula.");
+        }
 
-	private String roboResponsavel;
+        if (prioridade == null) {
+            throw new IllegalArgumentException("A prioridade não pode ser nula.");
+        }
 
-	private boolean resultado;
+        if (!Double.isFinite(pesoCargaKg) || pesoCargaKg < 0) {
+            throw new IllegalArgumentException("O peso da carga não pode ser negativo ou inválido.");
+        }
 
-	private int attribute31;
+        if (tipo != TipoMissao.TRANSPORTE_SUPRIMENTOS && pesoCargaKg != 0) {
+            throw new IllegalArgumentException(
+                    "Apenas missões de transporte podem possuir peso de carga."
+            );
+        }
 
-	public void atribuirRobo() {
+        this.id = id;
+        this.descricao = descricao;
+        this.tipo = tipo;
+        this.area = area;
+        this.prioridade = prioridade;
+        this.pesoCargaKg = pesoCargaKg;
 
-	}
+        this.status = StatusMissao.PENDENTE;
+        this.roboResponsavel = null;
+        this.resultado = null;
+    }
 
-	public void iniciar() {
+    public int getId() {
+        return id;
+    }
 
-	}
+    public String getDescricao() {
+        return descricao;
+    }
 
-	public void concluir() {
+    public TipoMissao getTipo() {
+        return tipo;
+    }
 
-	}
+    public AreaOperacao getArea() {
+        return area;
+    }
 
-	public void cancelar() {
+    public PrioridadeMissao getPrioridade() {
+        return prioridade;
+    }
 
-	}
+    public StatusMissao getStatus() {
+        return status;
+    }
 
-	public void exibirResumo() {
+    public Robo getRoboResponsavel() {
+        return roboResponsavel;
+    }
 
-	}
+    public String getResultado() {
+        return resultado;
+    }
 
+    public double getPesoCargaKg() {
+        return pesoCargaKg;
+    }
+
+    public void atribuirRobo(Robo robo) {
+        if (status != StatusMissao.PENDENTE) {
+            throw new IllegalStateException("A missão não está pendente.");
+        }
+
+        if (robo == null) {
+            throw new IllegalArgumentException("O robô não pode ser nulo.");
+        }
+
+        if (roboResponsavel != null) {
+            throw new IllegalStateException("A missão já possui um robô responsável.");
+        }
+
+        this.roboResponsavel = robo;
+        roboResponsavel.setStatus(StatusRobo.EM_MISSAO);
+    }
+
+    public void iniciar() {
+        if (status != StatusMissao.PENDENTE) {
+            throw new IllegalStateException("A missão não está pendente.");
+        }
+
+        if (roboResponsavel == null) {
+            throw new IllegalStateException("Nenhum robô foi atribuído à missão.");
+        }
+
+        this.status = StatusMissao.EM_ANDAMENTO;
+    }
+
+    public void registrarResultado(String resultado) {
+        if (status != StatusMissao.EM_ANDAMENTO) {
+            throw new IllegalStateException("A missão não está em andamento.");
+        }
+
+        if (resultado == null || resultado.isBlank()) {
+            throw new IllegalArgumentException("O resultado não pode ser vazio.");
+        }
+
+        this.resultado = resultado;
+    }
+
+    public void concluir() {
+        if (status != StatusMissao.EM_ANDAMENTO) {
+            throw new IllegalStateException("A missão não está em andamento.");
+        }
+
+        if (roboResponsavel == null) {
+            throw new IllegalStateException("Nenhum robô foi atribuído à missão.");
+        }
+
+        roboResponsavel.executarMissao(this);
+
+        if (resultado == null) {
+            throw new IllegalStateException("A execução não registrou um resultado.");
+        }
+
+        this.status = StatusMissao.CONCLUIDA;
+        roboResponsavel.setStatus(StatusRobo.DISPONIVEL);
+    }
+
+    public void cancelar() {
+        if (status != StatusMissao.PENDENTE) {
+            throw new IllegalStateException("Apenas missões pendentes podem ser canceladas.");
+        }
+
+        if (roboResponsavel != null) {
+            roboResponsavel.setStatus(StatusRobo.DISPONIVEL);
+        }
+
+        this.resultado = "Missão " + id + " - " + descricao + " foi cancelada.";
+        this.status = StatusMissao.CANCELADA;
+    }
+
+    public String exibirResumo() {
+        return "Missão " + id +
+                "\nDescrição: " + descricao +
+                "\nTipo: " + tipo +
+                "\nÁrea: " + area.exibirInformacoes() +
+                "\nPrioridade: " + prioridade +
+                "\nStatus: " + status +
+                "\nRobô responsável: " +
+                (roboResponsavel != null
+                        ? roboResponsavel.getId() + " - " + roboResponsavel.getNome()
+                        : "Nenhum") +
+                (tipo == TipoMissao.TRANSPORTE_SUPRIMENTOS
+                        ? "\nPeso da carga: " + pesoCargaKg + " kg"
+                        : "") +
+                "\nResultado: " + (resultado != null ? resultado : "Não disponível");
+    }
 }
