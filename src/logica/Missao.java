@@ -99,7 +99,24 @@ public class Missao {
         return pesoCargaKg;
     }
 
-    public void atribuirRobo(Robo robo) {
+	public int calculaBateria() {
+    switch (tipo) {
+        case RECONHECIMENTO:
+            return 15;
+
+	      case LOCALIZACAO_PESSOAS:
+            return 25;
+	
+        case TRANSPORTE_SUPRIMENTOS:
+            return 40;
+        default:
+            throw new IllegalStateException(
+                    "Tipo de missão inválido."
+            );
+    }	
+	}	
+	
+     public void atribuirRobo(Robo robo) {
         if (status != StatusMissao.PENDENTE) {
             throw new IllegalStateException("A missão não está pendente.");
         }
@@ -159,6 +176,8 @@ public class Missao {
         roboResponsavel.setStatus(StatusRobo.DISPONIVEL);
     }
 
+
+
     public void cancelar() {
         if (status != StatusMissao.PENDENTE) {
             throw new IllegalStateException("Apenas missões pendentes podem ser canceladas.");
@@ -171,6 +190,27 @@ public class Missao {
         this.resultado = "Missão " + id + " - " + descricao + " foi cancelada.";
         this.status = StatusMissao.CANCELADA;
     }
+
+
+public void consumirBateria() {
+    if (roboResponsavel == null) {
+        throw new IllegalStateException(
+                "Nenhum robô foi atribuído à missão."
+        );
+    }
+
+    int bateriaAtual = roboResponsavel.consultarBateria();
+    int consumo = calculaBateria();
+
+    roboResponsavel.setBateria(bateriaAtual - consumo);
+
+    if (roboResponsavel.consultarBateria() == 0) {
+        roboResponsavel.setStatus(StatusRobo.SEM_BATERIA);
+    } else {
+        roboResponsavel.setStatus(StatusRobo.DISPONIVEL);
+    }
+}
+
 
     public String exibirResumo() {
         return "Missão " + id +

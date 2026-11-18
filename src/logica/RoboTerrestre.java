@@ -39,16 +39,16 @@ public class RoboTerrestre extends Robo {
         if (!podeExecutar(missao)) {
             throw new IllegalArgumentException("Missao incompativel com robo terrestre.");
         }
-        return missao.getArea().getTipoTerreno() == TipoTerreno.IRREGULAR ? 35 : 25;
+        return missao.calculaBateria();
     }
-
     @Override
     public void executarMissao(Missao missao) {
-        int consumo = iniciarExecucao(missao);
+
         String resultado = String.format(
                 "Transporte simulado de %.1f kg de suprimentos concluido.",
                 missao.getPesoCargaKg());
-        concluirExecucao(missao, consumo, resultado);
+        System.out.println(resultado);        
+        missao.concluir();
     }
 
 	@Override 

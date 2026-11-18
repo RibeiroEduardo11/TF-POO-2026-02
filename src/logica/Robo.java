@@ -7,8 +7,8 @@ public abstract class Robo implements Comunicavel {
 
 	public final int id;
 	private String nome;
-	private int nivelBateria;
-	private StatusRobo status;
+	public int nivelBateria;
+	public StatusRobo status;
 	private int missoesRealizadas;
 
 	protected Robo(int id, String nome, int nivelBateria) {
@@ -90,8 +90,10 @@ public abstract class Robo implements Comunicavel {
 	public void exibirResumo() {
 		System.out.println(toString());
 	}
+	public abstract int calcularConsumoBateria(Missao missao);
+	public abstract void executarMissao(Missao missao);
 
- 	public abstract void executarMissao(Missao missao);
+ 	public abstract boolean podeExecutar(Missao missao);
 
 	@Override
 	public void enviarMensagem(String mensagem) {
