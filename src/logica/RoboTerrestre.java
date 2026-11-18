@@ -43,16 +43,17 @@ public class RoboTerrestre extends Robo {
     }
     @Override
     public void executarMissao(Missao missao) {
-
+        validarExecucao(missao);
         String resultado = String.format(
-                "Transporte simulado de %.1f kg de suprimentos concluido.",
+                "Transporte simulado de %.1f kg de suprimentos concluído.",
                 missao.getPesoCargaKg());
-        System.out.println(resultado);        
-        missao.concluir();
+        missao.registrarResultado(resultado);
     }
 
-	@Override 
-	public void exibirResumo() {
-		System.out.println(toString());
-	}
+    @Override
+    public String toString() {
+        return super.toString() + "\n Tipo: Robô terrestre"
+                + "\n Capacidade de carga (kg): " + capacidadeCargaKg
+                + "\n Supera obstáculos: " + (superaObstaculos ? "sim" : "não");
+    }
 }

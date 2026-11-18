@@ -5,17 +5,20 @@ import enums.PrioridadeMissao;
 import enums.StatusMissao;
 import enums.StatusRobo;
 
-public class Missao {
+import java.io.Serializable;
 
-    private int id;
-    private String descricao;
-    private TipoMissao tipo;
-    private AreaOperacao area;
-    private PrioridadeMissao prioridade;
+public class Missao implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private final int id;
+    private final String descricao;
+    private final TipoMissao tipo;
+    private final AreaOperacao area;
+    private final PrioridadeMissao prioridade;
     private StatusMissao status;
     private Robo roboResponsavel;
     private String resultado;
-    private double pesoCargaKg;
+    private final double pesoCargaKg;
 
     public Missao(int id, String descricao, TipoMissao tipo,
                   AreaOperacao area, PrioridadeMissao prioridade,
@@ -99,24 +102,15 @@ public class Missao {
         return pesoCargaKg;
     }
 
-	public int calculaBateria() {
-    switch (tipo) {
-        case RECONHECIMENTO:
-            return 15;
+    public int calculaBateria() {
+        return switch (tipo) {
+            case RECONHECIMENTO -> 15;
+            case LOCALIZACAO_PESSOAS -> 25;
+            case TRANSPORTE_SUPRIMENTOS -> 40;
+        };
+    }
 
-	      case LOCALIZACAO_PESSOAS:
-            return 25;
-	
-        case TRANSPORTE_SUPRIMENTOS:
-            return 40;
-        default:
-            throw new IllegalStateException(
-                    "Tipo de missão inválido."
-            );
-    }	
-	}	
-	
-     public void atribuirRobo(Robo robo) {
+    public void atribuirRobo(Robo robo) {
         if (status != StatusMissao.PENDENTE) {
             throw new IllegalStateException("A missão não está pendente.");
         }
@@ -129,6 +123,15 @@ public class Missao {
             throw new IllegalStateException("A missão já possui um robô responsável.");
         }
 
+        if (!robo.verificarDisponibilidade()) {
+            throw new IllegalStateException("O robô não está disponível.");
+        }
+
+        if (!robo.podeExecutar(this)) {
+            throw new IllegalArgumentException("Esse robô não é compatível com a missão.");
+        }
+
+        robo.verificarBateriaPara(this);
         this.roboResponsavel = robo;
         roboResponsavel.setStatus(StatusRobo.EM_MISSAO);
     }
@@ -166,16 +169,17 @@ public class Missao {
             throw new IllegalStateException("Nenhum robô foi atribuído à missão.");
         }
 
+        int consumo = roboResponsavel.verificarBateriaPara(this);
         roboResponsavel.executarMissao(this);
 
         if (resultado == null) {
             throw new IllegalStateException("A execução não registrou um resultado.");
         }
 
+        roboResponsavel.registrarExecucao(consumo);
         this.status = StatusMissao.CONCLUIDA;
-        roboResponsavel.setStatus(StatusRobo.DISPONIVEL);
+        liberarRobo();
     }
-
 
 
     public void cancelar() {
@@ -184,7 +188,7 @@ public class Missao {
         }
 
         if (roboResponsavel != null) {
-            roboResponsavel.setStatus(StatusRobo.DISPONIVEL);
+            liberarRobo();
         }
 
         this.resultado = "Missão " + id + " - " + descricao + " foi cancelada.";
@@ -192,25 +196,12 @@ public class Missao {
     }
 
 
-public void consumirBateria() {
-    if (roboResponsavel == null) {
-        throw new IllegalStateException(
-                "Nenhum robô foi atribuído à missão."
-        );
+    private void liberarRobo() {
+        StatusRobo statusRobo = roboResponsavel.consultarBateria() == 0
+                ? StatusRobo.SEM_BATERIA
+                : StatusRobo.DISPONIVEL;
+        roboResponsavel.setStatus(statusRobo);
     }
-
-    int bateriaAtual = roboResponsavel.consultarBateria();
-    int consumo = calculaBateria();
-
-    roboResponsavel.setBateria(bateriaAtual - consumo);
-
-    if (roboResponsavel.consultarBateria() == 0) {
-        roboResponsavel.setStatus(StatusRobo.SEM_BATERIA);
-    } else {
-        roboResponsavel.setStatus(StatusRobo.DISPONIVEL);
-    }
-}
-
 
     public String exibirResumo() {
         return "Missão " + id +

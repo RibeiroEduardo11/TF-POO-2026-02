@@ -1,14 +1,19 @@
 package logica;
 
+import enums.StatusMissao;
 import enums.StatusRobo;
 import interfaces.Comunicavel;
 
-public abstract class Robo implements Comunicavel {
+import java.io.Serializable;
+import java.util.Objects;
 
-	public final int id;
+public abstract class Robo implements Comunicavel, Serializable {
+    private static final long serialVersionUID = 1L;
+
+	private final int id;
 	private String nome;
-	public int nivelBateria;
-	public StatusRobo status;
+	private int nivelBateria;
+	private StatusRobo status;
 	private int missoesRealizadas;
 
 	protected Robo(int id, String nome, int nivelBateria) {
@@ -47,8 +52,8 @@ public abstract class Robo implements Comunicavel {
 		return status;
 	}
 
-	public void setStatus(StatusRobo status) {
-		this.status = status;
+	void setStatus(StatusRobo status) {
+		this.status = Objects.requireNonNull(status, "O status do robô é obrigatório.");
 	}
 
 	public int getMissoesRealizadas() {
@@ -93,7 +98,28 @@ public abstract class Robo implements Comunicavel {
 	public abstract int calcularConsumoBateria(Missao missao);
 	public abstract void executarMissao(Missao missao);
 
- 	public abstract boolean podeExecutar(Missao missao);
+	public abstract boolean podeExecutar(Missao missao);
+
+    protected void validarExecucao(Missao missao) {
+        if (missao == null || missao.getRoboResponsavel() != this
+                || missao.getStatus() != StatusMissao.EM_ANDAMENTO
+                || status != StatusRobo.EM_MISSAO) {
+            throw new IllegalStateException("O robô precisa estar atribuído a uma missão em andamento.");
+        }
+    }
+
+    int verificarBateriaPara(Missao missao) {
+        int consumo = calcularConsumoBateria(missao);
+        if (consultarBateria() < consumo) {
+            throw new IllegalStateException("Bateria insuficiente para executar essa missão.");
+        }
+        return consumo;
+    }
+
+    void registrarExecucao(int consumo) {
+        setBateria(consultarBateria() - consumo);
+        missoesRealizadas++;
+    }
 
 	@Override
 	public void enviarMensagem(String mensagem) {

@@ -3,14 +3,17 @@ package logica;
 import enums.TipoTerreno;
 import enums.NivelRisco;
 
-public class AreaOperacao {
+import java.io.Serializable;
 
-    private int id;
-    private String nome;
-    private String localizacao;
-    private TipoTerreno tipoTerreno;
+public class AreaOperacao implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private final int id;
+    private final String nome;
+    private final String localizacao;
+    private final TipoTerreno tipoTerreno;
     private NivelRisco nivelRisco;
-    private String descricao;
+    private final String descricao;
 
     public AreaOperacao(int id, String nome, String localizacao,
                         TipoTerreno tipoTerreno, NivelRisco nivelRisco,
@@ -62,6 +65,10 @@ public class AreaOperacao {
 
     public TipoTerreno getTipoTerreno() {
         return tipoTerreno;
+    }
+
+    public NivelRisco getNivelRisco() {
+        return nivelRisco;
     }
 
     public String exibirInformacoes() {
