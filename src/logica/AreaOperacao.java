@@ -48,6 +48,10 @@ public class AreaOperacao {
         this.descricao = descricao;
     }
 
+	public int getId(){
+		return id;
+	}
+
     public void atualizarNivelRisco(NivelRisco novoRisco) {
         if (novoRisco == null) {
             throw new IllegalArgumentException("O novo nível de risco não pode ser nulo.");
