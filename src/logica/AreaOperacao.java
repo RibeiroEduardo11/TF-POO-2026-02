@@ -19,28 +19,11 @@ public class AreaOperacao implements Serializable {
                         TipoTerreno tipoTerreno, NivelRisco nivelRisco,
                         String descricao) {
 
-        if (id <= 0) {
-            throw new IllegalArgumentException("O ID deve ser positivo.");
-        }
-
-        if (nome == null || nome.isBlank()) {
-            throw new IllegalArgumentException("O nome nao pode ser vazio.");
-        }
-
-        if (localizacao == null || localizacao.isBlank()) {
-            throw new IllegalArgumentException("A localizacao nao pode ser vazia.");
-        }
-
-        if (tipoTerreno == null) {
-            throw new IllegalArgumentException("O tipo de terreno nao pode ser nulo.");
-        }
-
-        if (nivelRisco == null) {
-            throw new IllegalArgumentException("O nivel de risco nao pode ser nulo.");
-        }
-
-        if (descricao == null || descricao.isBlank()) {
-            throw new IllegalArgumentException("A descricao nao pode ser vazia.");
+        if (id <= 0 || nome == null || nome.isBlank()
+                || localizacao == null || localizacao.isBlank()
+                || tipoTerreno == null || nivelRisco == null
+                || descricao == null || descricao.isBlank()) {
+            throw new IllegalArgumentException("Dados da area invalidos.");
         }
 
         this.id = id;
@@ -65,6 +48,10 @@ public class AreaOperacao implements Serializable {
 
     public TipoTerreno getTipoTerreno() {
         return tipoTerreno;
+    }
+
+    public NivelRisco getNivelRisco() {
+        return nivelRisco;
     }
 
     public String exibirInformacoes() {

@@ -36,10 +36,11 @@ public class main {
             System.out.println("8  - Iniciar missao");
             System.out.println("9  - Concluir missao");
             System.out.println("10 - Cancelar missao");
-            System.out.println("11 - Listar missoes pendentes");
+            System.out.println("11 - Listar fila priorizada");
             System.out.println("12 - Listar missoes finalizadas");
             System.out.println("13 - Listar areas");
             System.out.println("14 - Gerar relatorio geral");
+            System.out.println("15 - Consultar criterios de prioridade");
             System.out.println("0  - Sair");
             System.out.println("================================");
 
@@ -68,6 +69,7 @@ public class main {
                 case 12 -> central.listarMissoesFinalizadas();
                 case 13 -> central.listarAreas();
                 case 14 -> central.gerarRelatorioGeral();
+                case 15 -> central.exibirCriteriosPrioridade();
                 case 0 -> System.out.println("Encerrando o sistema...");
                 default -> System.out.println("Opcao invalida.");
             }

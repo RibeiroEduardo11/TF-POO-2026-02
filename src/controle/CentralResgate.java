@@ -214,6 +214,7 @@ public CentralResgate(String nome, Scanner sc) {
         }
 
         area.atualizarNivelRisco(novoRisco);
+        ordenarFilaPorPrioridade();
 
         System.out.println("Nível de risco atualizado com sucesso.");
     }
@@ -298,6 +299,7 @@ public CentralResgate(String nome, Scanner sc) {
             );
 
             missoesPendentes.add(novaMissao);
+            ordenarFilaPorPrioridade();
 
             System.out.println("Missão registrada com sucesso! ID: " + id);
 
@@ -462,7 +464,8 @@ public CentralResgate(String nome, Scanner sc) {
         Missao missao = buscarMissaoPendente(id);
 
         if (missao == null) {
-            System.out.println("Missão não encontrada.");
+            ordenarFilaPorPrioridade();
+            System.out.println("\n=== FILA DE MISSÕES PRIORIZADA ===");
             return;
         }
 

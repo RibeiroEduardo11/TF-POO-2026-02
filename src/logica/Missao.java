@@ -93,6 +93,50 @@ public class Missao implements Serializable {
         return pesoCargaKg;
     }
 
+    public int calcularPontuacaoPrioridade() {
+
+        int pontosPrioridade;
+        switch (prioridade) {
+            case ALTA:
+                pontosPrioridade = 50;
+                break;
+            case MEDIA:
+                pontosPrioridade = 30;
+                break;
+            default:
+                pontosPrioridade = 10;
+                break;
+        }
+
+        int pontosRisco;
+        switch (area.getNivelRisco()) {
+            case ALTO:
+                pontosRisco = 30;
+                break;
+            case MEDIO:
+                pontosRisco = 20;
+                break;
+            default:
+                pontosRisco = 10;
+                break;
+        }
+
+        int pontosTipo;
+        switch (tipo) {
+            case LOCALIZACAO_PESSOAS:
+                pontosTipo = 20;
+                break;
+            case TRANSPORTE_SUPRIMENTOS:
+                pontosTipo = 15;
+                break;
+            default:
+                pontosTipo = 10;
+                break;
+        }
+
+        return pontosPrioridade + pontosRisco + pontosTipo;
+    }
+
     public int calculaBateria() {
         switch (tipo) {
             case RECONHECIMENTO:
@@ -203,7 +247,8 @@ public class Missao implements Serializable {
                 "\nDescricao: " + descricao +
                 "\nTipo: " + tipo +
                 "\nArea: " + area.exibirInformacoes() +
-                "\nPrioridade: " + prioridade +
+                "\nPrioridade cadastrada: " + prioridade +
+                "\nPontuacao de prioridade: " + calcularPontuacaoPrioridade() +
                 "\nStatus: " + status +
                 "\nRobo responsavel: " +
                 (roboResponsavel != null
