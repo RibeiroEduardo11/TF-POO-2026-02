@@ -2,8 +2,11 @@ package logica;
 
 import enums.TipoTerreno;
 import enums.NivelRisco;
+import java.io.Serializable;
 
-public class AreaOperacao {
+public class AreaOperacao implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private int id;
     private String nome;
@@ -16,28 +19,11 @@ public class AreaOperacao {
                         TipoTerreno tipoTerreno, NivelRisco nivelRisco,
                         String descricao) {
 
-        if (id <= 0) {
-            throw new IllegalArgumentException("O ID deve ser positivo.");
-        }
-
-        if (nome == null || nome.isBlank()) {
-            throw new IllegalArgumentException("O nome não pode ser vazio.");
-        }
-
-        if (localizacao == null || localizacao.isBlank()) {
-            throw new IllegalArgumentException("A localização não pode ser vazia.");
-        }
-
-        if (tipoTerreno == null) {
-            throw new IllegalArgumentException("O tipo de terreno não pode ser nulo.");
-        }
-
-        if (nivelRisco == null) {
-            throw new IllegalArgumentException("O nível de risco não pode ser nulo.");
-        }
-
-        if (descricao == null || descricao.isBlank()) {
-            throw new IllegalArgumentException("A descrição não pode ser vazia.");
+        if (id <= 0 || nome == null || nome.isBlank()
+                || localizacao == null || localizacao.isBlank()
+                || tipoTerreno == null || nivelRisco == null
+                || descricao == null || descricao.isBlank()) {
+            throw new IllegalArgumentException("Dados da area invalidos.");
         }
 
         this.id = id;
@@ -48,13 +34,13 @@ public class AreaOperacao {
         this.descricao = descricao;
     }
 
-	public int getId(){
-		return id;
-	}
+    public int getId() {
+        return id;
+    }
 
     public void atualizarNivelRisco(NivelRisco novoRisco) {
         if (novoRisco == null) {
-            throw new IllegalArgumentException("O novo nível de risco não pode ser nulo.");
+            throw new IllegalArgumentException("O novo nivel de risco nao pode ser nulo.");
         }
 
         this.nivelRisco = novoRisco;
@@ -64,12 +50,16 @@ public class AreaOperacao {
         return tipoTerreno;
     }
 
+    public NivelRisco getNivelRisco() {
+        return nivelRisco;
+    }
+
     public String exibirInformacoes() {
         return nome +
                 "\nID: " + id +
-                "\nLocalização: " + localizacao +
+                "\nLocalizacao: " + localizacao +
                 "\nTipo de terreno: " + tipoTerreno +
-                "\nNível de risco: " + nivelRisco +
-                "\nDescrição: " + descricao;
+                "\nNivel de risco: " + nivelRisco +
+                "\nDescricao: " + descricao;
     }
 }

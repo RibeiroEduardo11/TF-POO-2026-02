@@ -4,8 +4,11 @@ import enums.TipoMissao;
 import enums.PrioridadeMissao;
 import enums.StatusMissao;
 import enums.StatusRobo;
+import java.io.Serializable;
 
-public class Missao {
+public class Missao implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private int id;
     private String descricao;
@@ -26,28 +29,20 @@ public class Missao {
         }
 
         if (descricao == null || descricao.isBlank()) {
-            throw new IllegalArgumentException("A descrição não pode ser vazia.");
+            throw new IllegalArgumentException("A descricao nao pode ser vazia.");
         }
 
-        if (tipo == null) {
-            throw new IllegalArgumentException("O tipo da missão não pode ser nulo.");
-        }
-
-        if (area == null) {
-            throw new IllegalArgumentException("A área de operação não pode ser nula.");
-        }
-
-        if (prioridade == null) {
-            throw new IllegalArgumentException("A prioridade não pode ser nula.");
+        if (tipo == null || area == null || prioridade == null) {
+            throw new IllegalArgumentException("Dados da missao invalidos.");
         }
 
         if (!Double.isFinite(pesoCargaKg) || pesoCargaKg < 0) {
-            throw new IllegalArgumentException("O peso da carga não pode ser negativo ou inválido.");
+            throw new IllegalArgumentException("Peso de carga invalido.");
         }
 
         if (tipo != TipoMissao.TRANSPORTE_SUPRIMENTOS && pesoCargaKg != 0) {
             throw new IllegalArgumentException(
-                    "Apenas missões de transporte podem possuir peso de carga."
+                    "Apenas missoes de transporte podem possuir peso de carga."
             );
         }
 
@@ -57,7 +52,6 @@ public class Missao {
         this.area = area;
         this.prioridade = prioridade;
         this.pesoCargaKg = pesoCargaKg;
-
         this.status = StatusMissao.PENDENTE;
         this.roboResponsavel = null;
         this.resultado = null;
@@ -99,34 +93,75 @@ public class Missao {
         return pesoCargaKg;
     }
 
-	public int calculaBateria() {
-    switch (tipo) {
-        case RECONHECIMENTO:
-            return 15;
+    public int calcularPontuacaoPrioridade() {
 
-	      case LOCALIZACAO_PESSOAS:
-            return 25;
-	
-        case TRANSPORTE_SUPRIMENTOS:
-            return 40;
-        default:
-            throw new IllegalStateException(
-                    "Tipo de missão inválido."
-            );
-    }	
-	}	
-	
-     public void atribuirRobo(Robo robo) {
+        int pontosPrioridade;
+        switch (prioridade) {
+            case ALTA:
+                pontosPrioridade = 50;
+                break;
+            case MEDIA:
+                pontosPrioridade = 30;
+                break;
+            default:
+                pontosPrioridade = 10;
+                break;
+        }
+
+        int pontosRisco;
+        switch (area.getNivelRisco()) {
+            case ALTO:
+                pontosRisco = 30;
+                break;
+            case MEDIO:
+                pontosRisco = 20;
+                break;
+            default:
+                pontosRisco = 10;
+                break;
+        }
+
+        int pontosTipo;
+        switch (tipo) {
+            case LOCALIZACAO_PESSOAS:
+                pontosTipo = 20;
+                break;
+            case TRANSPORTE_SUPRIMENTOS:
+                pontosTipo = 15;
+                break;
+            default:
+                pontosTipo = 10;
+                break;
+        }
+
+        return pontosPrioridade + pontosRisco + pontosTipo;
+    }
+
+    public int calculaBateria() {
+        switch (tipo) {
+            case RECONHECIMENTO:
+                return 15;
+            case LOCALIZACAO_PESSOAS:
+                return 25;
+            case TRANSPORTE_SUPRIMENTOS:
+                return 40;
+            default:
+                throw new IllegalStateException("Tipo de missao invalido.");
+        }
+    }
+
+    public void atribuirRobo(Robo robo) {
+
         if (status != StatusMissao.PENDENTE) {
-            throw new IllegalStateException("A missão não está pendente.");
+            throw new IllegalStateException("A missao nao esta pendente.");
         }
 
         if (robo == null) {
-            throw new IllegalArgumentException("O robô não pode ser nulo.");
+            throw new IllegalArgumentException("O robo nao pode ser nulo.");
         }
 
         if (roboResponsavel != null) {
-            throw new IllegalStateException("A missão já possui um robô responsável.");
+            throw new IllegalStateException("A missao ja possui um robo.");
         }
 
         this.roboResponsavel = robo;
@@ -134,98 +169,95 @@ public class Missao {
     }
 
     public void iniciar() {
+
         if (status != StatusMissao.PENDENTE) {
-            throw new IllegalStateException("A missão não está pendente.");
+            throw new IllegalStateException("A missao nao esta pendente.");
         }
 
         if (roboResponsavel == null) {
-            throw new IllegalStateException("Nenhum robô foi atribuído à missão.");
+            throw new IllegalStateException("Nenhum robo foi atribuido.");
         }
 
         this.status = StatusMissao.EM_ANDAMENTO;
     }
 
     public void registrarResultado(String resultado) {
+
         if (status != StatusMissao.EM_ANDAMENTO) {
-            throw new IllegalStateException("A missão não está em andamento.");
+            throw new IllegalStateException("A missao nao esta em andamento.");
         }
 
         if (resultado == null || resultado.isBlank()) {
-            throw new IllegalArgumentException("O resultado não pode ser vazio.");
+            throw new IllegalArgumentException("O resultado nao pode ser vazio.");
         }
 
         this.resultado = resultado;
     }
 
     public void concluir() {
+
         if (status != StatusMissao.EM_ANDAMENTO) {
-            throw new IllegalStateException("A missão não está em andamento.");
+            throw new IllegalStateException("A missao nao esta em andamento.");
         }
 
         if (roboResponsavel == null) {
-            throw new IllegalStateException("Nenhum robô foi atribuído à missão.");
+            throw new IllegalStateException("Nenhum robo foi atribuido.");
         }
 
         roboResponsavel.executarMissao(this);
 
         if (resultado == null) {
-            throw new IllegalStateException("A execução não registrou um resultado.");
+            throw new IllegalStateException(
+                    "A execucao nao registrou um resultado."
+            );
         }
 
         this.status = StatusMissao.CONCLUIDA;
-        roboResponsavel.setStatus(StatusRobo.DISPONIVEL);
-    }
 
-
-
-    public void cancelar() {
-        if (status != StatusMissao.PENDENTE) {
-            throw new IllegalStateException("Apenas missões pendentes podem ser canceladas.");
-        }
-
-        if (roboResponsavel != null) {
-            roboResponsavel.setStatus(StatusRobo.DISPONIVEL);
-        }
-
-        this.resultado = "Missão " + id + " - " + descricao + " foi cancelada.";
-        this.status = StatusMissao.CANCELADA;
-    }
-
-
-public void consumirBateria() {
-    if (roboResponsavel == null) {
-        throw new IllegalStateException(
-                "Nenhum robô foi atribuído à missão."
+        roboResponsavel.setStatus(
+                roboResponsavel.consultarBateria() == 0
+                        ? StatusRobo.SEM_BATERIA
+                        : StatusRobo.DISPONIVEL
         );
     }
 
-    int bateriaAtual = roboResponsavel.consultarBateria();
-    int consumo = calculaBateria();
+    public void cancelar() {
 
-    roboResponsavel.setBateria(bateriaAtual - consumo);
+        if (status != StatusMissao.PENDENTE) {
+            throw new IllegalStateException(
+                    "Apenas missoes pendentes podem ser canceladas."
+            );
+        }
 
-    if (roboResponsavel.consultarBateria() == 0) {
-        roboResponsavel.setStatus(StatusRobo.SEM_BATERIA);
-    } else {
-        roboResponsavel.setStatus(StatusRobo.DISPONIVEL);
+        if (roboResponsavel != null) {
+            roboResponsavel.setStatus(
+                    roboResponsavel.consultarBateria() == 0
+                            ? StatusRobo.SEM_BATERIA
+                            : StatusRobo.DISPONIVEL
+            );
+        }
+
+        this.resultado = "Missao " + id + " - " + descricao + " foi cancelada.";
+        this.status = StatusMissao.CANCELADA;
     }
-}
-
 
     public String exibirResumo() {
-        return "Missão " + id +
-                "\nDescrição: " + descricao +
+
+        return "Missao " + id +
+                "\nDescricao: " + descricao +
                 "\nTipo: " + tipo +
-                "\nÁrea: " + area.exibirInformacoes() +
-                "\nPrioridade: " + prioridade +
+                "\nArea: " + area.exibirInformacoes() +
+                "\nPrioridade cadastrada: " + prioridade +
+                "\nPontuacao de prioridade: " + calcularPontuacaoPrioridade() +
                 "\nStatus: " + status +
-                "\nRobô responsável: " +
+                "\nRobo responsavel: " +
                 (roboResponsavel != null
                         ? roboResponsavel.getId() + " - " + roboResponsavel.getNome()
                         : "Nenhum") +
                 (tipo == TipoMissao.TRANSPORTE_SUPRIMENTOS
                         ? "\nPeso da carga: " + pesoCargaKg + " kg"
                         : "") +
-                "\nResultado: " + (resultado != null ? resultado : "Não disponível");
+                "\nResultado: " +
+                (resultado != null ? resultado : "Nao disponivel");
     }
 }
