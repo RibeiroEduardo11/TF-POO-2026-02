@@ -5,8 +5,6 @@ import enums.TipoMissao;
 
 /** Robo terrestre: transporte de suprimentos. */
 public class RoboTerrestre extends Robo {
-    private static final long serialVersionUID = 1L;
-
     private final double capacidadeCargaKg;
     private final boolean superaObstaculos;
 
@@ -43,12 +41,11 @@ public class RoboTerrestre extends Robo {
     }
     @Override
     public void executarMissao(Missao missao) {
-
+        validarExecucao(missao);
         String resultado = String.format(
-                "Transporte simulado de %.1f kg de suprimentos concluido.",
+                "Transporte simulado de %.1f kg de suprimentos concluído.",
                 missao.getPesoCargaKg());
-        System.out.println(resultado);        
-        missao.concluir();
+        missao.registrarResultado(resultado);
     }
 
 	@Override 

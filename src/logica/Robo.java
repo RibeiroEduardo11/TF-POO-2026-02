@@ -1,5 +1,6 @@
 package logica;
 
+import enums.StatusMissao;
 import enums.StatusRobo;
 import interfaces.Comunicavel;
 
@@ -93,7 +94,28 @@ public abstract class Robo implements Comunicavel {
 	public abstract int calcularConsumoBateria(Missao missao);
 	public abstract void executarMissao(Missao missao);
 
- 	public abstract boolean podeExecutar(Missao missao);
+	public abstract boolean podeExecutar(Missao missao);
+
+    protected void validarExecucao(Missao missao) {
+        if (missao == null || missao.getRoboResponsavel() != this
+                || missao.getStatus() != StatusMissao.EM_ANDAMENTO
+                || status != StatusRobo.EM_MISSAO) {
+            throw new IllegalStateException("O robô precisa estar atribuído a uma missão em andamento.");
+        }
+    }
+
+    int verificarBateriaPara(Missao missao) {
+        int consumo = calcularConsumoBateria(missao);
+        if (consultarBateria() < consumo) {
+            throw new IllegalStateException("Bateria insuficiente para executar essa missão.");
+        }
+        return consumo;
+    }
+
+    void registrarExecucao(int consumo) {
+        setBateria(consultarBateria() - consumo);
+        missoesRealizadas++;
+    }
 
 	@Override
 	public void enviarMensagem(String mensagem) {

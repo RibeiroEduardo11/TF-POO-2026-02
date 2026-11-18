@@ -6,27 +6,31 @@ import enums.NivelRisco;
 import enums.TipoMissao;
 import enums.PrioridadeMissao;
 import enums.StatusMissao;
-import enums.StatusRobo;
 
 import java.util.ArrayList;
 import java.util.Queue;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class CentralResgate {
 
-    private String nome;
+    private final String nome;
     private ArrayList<Robo> robos;
     private ArrayList<AreaOperacao> areas;
     private Queue<Missao> missoesPendentes;
     private ArrayList<Missao> missoesFinalizadas;
-    private Scanner sc;
+    private final Scanner sc;
 
     public CentralResgate() {
         this("Central de Resgate");
     }
 
     public CentralResgate(String nome) {
+        this(nome, new Scanner(System.in));
+    }
+
+    public CentralResgate(String nome, Scanner sc) {
         if (nome == null || nome.isBlank()) {
             throw new IllegalArgumentException("O nome da central não pode ser vazio.");
         }
@@ -36,7 +40,11 @@ public class CentralResgate {
         this.areas = new ArrayList<>();
         this.missoesPendentes = new LinkedList<>();
         this.missoesFinalizadas = new ArrayList<>();
-        this.sc = new Scanner(System.in);
+        this.sc = Objects.requireNonNull(sc, "A entrada da central é obrigatória.");
+    }
+
+    public String getNome() {
+        return nome;
     }
 
     // CADASTRO DE ROBÔS
@@ -59,7 +67,7 @@ public class CentralResgate {
                 boolean camera = lerSimNao("O drone possui câmera?");
 
                 Robo novoRobo = new Drone(
-                        id, nomeRobo, bateria, altitude, camera, altitude, camera
+                        id, nomeRobo, bateria, altitude, camera
                 );
 
                 robos.add(novoRobo);
@@ -321,6 +329,29 @@ public class CentralResgate {
         }
     }
 
+    public void recarregarRobo() {
+        if (robos.isEmpty()) {
+            System.out.println("Não existem robôs cadastrados.");
+            return;
+        }
+
+        listarRobos();
+        int id = lerInteiro("Informe o ID do robô: ", 1, Integer.MAX_VALUE);
+        Robo robo = buscarRoboPorId(id);
+
+        if (robo == null) {
+            System.out.println("Robô não encontrado.");
+            return;
+        }
+
+        try {
+            robo.recarregar();
+            System.out.println("Robô recarregado com sucesso.");
+        } catch (IllegalStateException e) {
+            System.out.println("Não foi possível recarregar o robô: " + e.getMessage());
+        }
+    }
+
     // ATRIBUIÇÃO DE ROBÔ A UMA MISSÃO
 
     public void atribuirRoboMissao() {
@@ -366,21 +397,6 @@ public class CentralResgate {
             return;
         }
 
-        if (!robo.verificarDisponibilidade()) {
-            System.out.println("O robô não está disponível.");
-            return;
-        }
-
-		if (robo.consultarBateria() < missao.calculaBateria()) {
- 	  	System.out.println("Bateria insuficiente para executar essa missão.");
- 	   	return;
-		}
-
-        if (!roboCompativel(robo, missao)) {
-            System.out.println("Esse robô não é compatível com a missão.");
-            return;
-        }
-
         try {
             missao.atribuirRobo(robo);
             System.out.println("Robô atribuído à missão com sucesso.");
@@ -388,45 +404,6 @@ public class CentralResgate {
         } catch (IllegalStateException | IllegalArgumentException e) {
             System.out.println("Erro ao atribuir robô: " + e.getMessage());
         }
-    }
-
-    private boolean roboCompativel(Robo robo, Missao missao) {
-
-        if (missao.getTipo() == TipoMissao.RECONHECIMENTO) {
-            return robo instanceof Drone;
-        }
-
-        if (missao.getTipo() == TipoMissao.LOCALIZACAO_PESSOAS) {
-            return robo instanceof Drone
-                    && ((Drone) robo).isPossuiCamera();
-        }
-
-        if (missao.getTipo() == TipoMissao.TRANSPORTE_SUPRIMENTOS) {
-            if (!(robo instanceof RoboTerrestre)) {
-                return false;
-            }
-
-            RoboTerrestre terrestre = (RoboTerrestre) robo;
-
-            if (missao.getPesoCargaKg() > terrestre.getCapacidadeCargaKg()) {
-                return false;
-            }
-
-            TipoTerreno terreno = missao.getArea().getTipoTerreno();
-
-            if (terreno == TipoTerreno.ALAGADO) {
-                return false;
-            }
-
-            if (terreno == TipoTerreno.IRREGULAR
-                    && !terrestre.isSuperaObstaculos()) {
-                return false;
-            }
-
-            return true;
-        }
-
-        return false;
     }
 
     // INÍCIO DE MISSÃO
@@ -460,40 +437,33 @@ public class CentralResgate {
     // CONCLUSÃO DE MISSÃO
 
     public void concluirMissao() {
-    if (missoesPendentes.isEmpty()) {
-        System.out.println("Não existem missões em aberto.");
-        return;
+        if (missoesPendentes.isEmpty()) {
+            System.out.println("Não existem missões em aberto.");
+            return;
+        }
+
+        listarMissoesPendentes();
+
+        int id = lerInteiro("Informe o ID da missão: ", 1, Integer.MAX_VALUE);
+        Missao missao = buscarMissaoPendente(id);
+
+        if (missao == null) {
+            System.out.println("Missão não encontrada.");
+            return;
+        }
+
+        try {
+            missao.concluir();
+
+            missoesPendentes.remove(missao);
+            missoesFinalizadas.add(missao);
+
+            System.out.println("Missão concluída com sucesso.");
+            System.out.println("Resultado: " + missao.getResultado());
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            System.out.println("Erro ao concluir missão: " + e.getMessage());
+        }
     }
-
-    listarMissoesPendentes();
-
-    int id = lerInteiro("Informe o ID da missão: ", 1, Integer.MAX_VALUE);
-
-    Missao missao = buscarMissaoPendente(id);
-
-    if (missao == null) {
-        System.out.println("Missão não encontrada.");
-        return;
-    }
-
-    if (missao.getStatus() != StatusMissao.EM_ANDAMENTO) {
-        System.out.println("A missão precisa estar em andamento para ser concluída.");
-        return;
-    }
-
-    try {
-        missao.concluir();
-
-        missoesPendentes.remove(missao);
-        missoesFinalizadas.add(missao);
-
-        System.out.println("Missão concluída com sucesso.");
-        System.out.println("Resultado: " + missao.getResultado());
-
-    } catch (RuntimeException e) {
-        System.out.println("Erro ao concluir missão: " + e.getMessage());
-    }
-}
 
     // CANCELAMENTO DE MISSÃO
 
@@ -660,7 +630,7 @@ public class CentralResgate {
         while (true) {
             try {
                 System.out.print(mensagem);
-                int valor = Integer.parseInt(sc.nextLine());
+                int valor = Integer.parseInt(sc.nextLine().trim());
 
                 if (valor < minimo || valor > maximo) {
                     System.out.println("Informe um valor entre "
@@ -684,7 +654,7 @@ public class CentralResgate {
         while (true) {
             try {
                 System.out.print(mensagem);
-                double valor = Double.parseDouble(sc.nextLine());
+                double valor = Double.parseDouble(sc.nextLine().replace(',', '.'));
 
                 if (!Double.isFinite(valor) || valor <= 0) {
                     System.out.println("Informe um valor maior que zero.");
@@ -703,7 +673,7 @@ public class CentralResgate {
         while (true) {
             try {
                 System.out.print(mensagem);
-                double valor = Double.parseDouble(sc.nextLine());
+                double valor = Double.parseDouble(sc.nextLine().replace(',', '.'));
 
                 if (!Double.isFinite(valor) || valor < 0) {
                     System.out.println("Informe um valor igual ou maior que zero.");
@@ -721,7 +691,7 @@ public class CentralResgate {
     private boolean lerSimNao(String mensagem) {
         while (true) {
             System.out.print(mensagem + " (S/N): ");
-            String resposta = sc.nextLine();
+            String resposta = sc.nextLine().trim();
 
             if (resposta.equalsIgnoreCase("S")) {
                 return true;
