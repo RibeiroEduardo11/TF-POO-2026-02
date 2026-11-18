@@ -1,42 +1,59 @@
-package controle;
 
+package controle;
+import java.io.Serializable;
 import enums.TipoTerreno;
 import logica.*;
 import enums.NivelRisco;
 import enums.TipoMissao;
 import enums.PrioridadeMissao;
 import enums.StatusMissao;
-import enums.StatusRobo;
 
 import java.util.ArrayList;
 import java.util.Queue;
 import java.util.LinkedList;
 import java.util.Scanner;
 
-public class CentralResgate {
+public class CentralResgate implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private String nome;
     private ArrayList<Robo> robos;
     private ArrayList<AreaOperacao> areas;
     private Queue<Missao> missoesPendentes;
     private ArrayList<Missao> missoesFinalizadas;
-    private Scanner sc;
+    private transient Scanner sc;
 
     public CentralResgate() {
-        this("Central de Resgate");
+    this("Central de Resgate", new Scanner(System.in));
+}
+
+public CentralResgate(String nome) {
+    this(nome, new Scanner(System.in));
+}
+
+public CentralResgate(String nome, Scanner sc) {
+    if (nome == null || nome.isBlank()) {
+        throw new IllegalArgumentException("O nome da central não pode ser vazio.");
     }
 
-    public CentralResgate(String nome) {
-        if (nome == null || nome.isBlank()) {
-            throw new IllegalArgumentException("O nome da central não pode ser vazio.");
+    if (sc == null) {
+        throw new IllegalArgumentException("Scanner não pode ser nulo.");
+    }
+
+    this.nome = nome;
+    this.robos = new ArrayList<>();
+    this.areas = new ArrayList<>();
+    this.missoesPendentes = new LinkedList<>();
+    this.missoesFinalizadas = new ArrayList<>();
+    this.sc = sc;
+    }
+
+    public void configurarScanner(Scanner sc) {
+        if (sc == null) {
+            throw new IllegalArgumentException("Scanner nao pode ser nulo.");
         }
 
-        this.nome = nome;
-        this.robos = new ArrayList<>();
-        this.areas = new ArrayList<>();
-        this.missoesPendentes = new LinkedList<>();
-        this.missoesFinalizadas = new ArrayList<>();
-        this.sc = new Scanner(System.in);
+        this.sc = sc;
     }
 
     // CADASTRO DE ROBÔS
@@ -59,7 +76,7 @@ public class CentralResgate {
                 boolean camera = lerSimNao("O drone possui câmera?");
 
                 Robo novoRobo = new Drone(
-                        id, nomeRobo, bateria, altitude, camera, altitude, camera
+                        id, nomeRobo, bateria, altitude, camera
                 );
 
                 robos.add(novoRobo);
@@ -332,7 +349,6 @@ public class CentralResgate {
         if (robos.isEmpty()) {
             System.out.println("Não existem robôs cadastrados.");
             return;
-
         }
 
         listarMissoesPendentes();
@@ -371,13 +387,15 @@ public class CentralResgate {
             return;
         }
 
-		if (robo.consultarBateria() < missao.calculaBateria()) {
- 	  	System.out.println("Bateria insuficiente para executar essa missão.");
- 	   	return;
-		}
-
         if (!roboCompativel(robo, missao)) {
             System.out.println("Esse robô não é compatível com a missão.");
+            return;
+        }
+
+        int consumoNecessario = robo.calcularConsumoBateria(missao);
+
+        if (robo.consultarBateria() < consumoNecessario) {
+            System.out.println("Bateria insuficiente para executar essa missão.");
             return;
         }
 
@@ -460,40 +478,40 @@ public class CentralResgate {
     // CONCLUSÃO DE MISSÃO
 
     public void concluirMissao() {
-    if (missoesPendentes.isEmpty()) {
-        System.out.println("Não existem missões em aberto.");
-        return;
+        if (missoesPendentes.isEmpty()) {
+            System.out.println("Não existem missões em aberto.");
+            return;
+        }
+
+        listarMissoesPendentes();
+
+        int id = lerInteiro("Informe o ID da missão: ", 1, Integer.MAX_VALUE);
+
+        Missao missao = buscarMissaoPendente(id);
+
+        if (missao == null) {
+            System.out.println("Missão não encontrada.");
+            return;
+        }
+
+        if (missao.getStatus() != StatusMissao.EM_ANDAMENTO) {
+            System.out.println("A missão precisa estar em andamento para ser concluída.");
+            return;
+        }
+
+        try {
+            missao.concluir();
+
+            missoesPendentes.remove(missao);
+            missoesFinalizadas.add(missao);
+
+            System.out.println("Missão concluída com sucesso.");
+            System.out.println("Resultado: " + missao.getResultado());
+
+        } catch (RuntimeException e) {
+            System.out.println("Erro ao concluir missão: " + e.getMessage());
+        }
     }
-
-    listarMissoesPendentes();
-
-    int id = lerInteiro("Informe o ID da missão: ", 1, Integer.MAX_VALUE);
-
-    Missao missao = buscarMissaoPendente(id);
-
-    if (missao == null) {
-        System.out.println("Missão não encontrada.");
-        return;
-    }
-
-    if (missao.getStatus() != StatusMissao.EM_ANDAMENTO) {
-        System.out.println("A missão precisa estar em andamento para ser concluída.");
-        return;
-    }
-
-    try {
-        missao.concluir();
-
-        missoesPendentes.remove(missao);
-        missoesFinalizadas.add(missao);
-
-        System.out.println("Missão concluída com sucesso.");
-        System.out.println("Resultado: " + missao.getResultado());
-
-    } catch (RuntimeException e) {
-        System.out.println("Erro ao concluir missão: " + e.getMessage());
-    }
-}
 
     // CANCELAMENTO DE MISSÃO
 
