@@ -1,3 +1,5 @@
+package interfaces;
+
 public interface Comunicavel {
 
 	public abstract void enviarMensagem(String mensagem);
